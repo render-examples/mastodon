@@ -1,0 +1,153 @@
+services:
+- type: web
+  name: mastodon-web
+  env: docker
+  plan: starter
+  dockerCommand: ./db-migration-and-web-start.sh
+  envVars:
+  - fromGroup: mastodon-env
+  - key: VAPID_PRIVATE_KEY # Generate with `bundle exec rake mastodon:webpush:generate_vapid_key`
+    sync: false
+  - key: VAPID_PUBLIC_KEY # Generate with `bundle exec rake mastodon:webpush:generate_vapid_key`
+    sync: false
+  - key: REDIS_HOST
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: host
+  - key: REDIS_PORT
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: port
+  - key: DB_HOST
+    fromDatabase:
+      name: mastodon-db
+      property: host
+  - key: DB_USER
+    fromDatabase:
+      name: mastodon-db
+      property: user
+  - key: DB_NAME
+    fromDatabase:
+      name: mastodon-db
+      property: database
+  - key: DB_PASS
+    fromDatabase:
+      name: mastodon-db
+      property: password
+  - key: DB_PORT
+    fromDatabase:
+      name: mastodon-db
+      property: port
+- type: web
+  name: mastodon-streaming
+  env: docker
+  plan: starter
+  dockerCommand: ./streaming-start.sh
+  envVars:
+  - fromGroup: mastodon-env
+  - key: WEB_HOST
+    fromService:
+      type: web
+      name: mastodon-web
+      property: host
+  - key: REDIS_HOST
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: host
+  - key: REDIS_PORT
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: port
+  - key: DB_HOST
+    fromDatabase:
+      name: mastodon-db
+      property: host
+  - key: DB_USER
+    fromDatabase:
+      name: mastodon-db
+      property: user
+  - key: DB_NAME
+    fromDatabase:
+      name: mastodon-db
+      property: database
+  - key: DB_PASS
+    fromDatabase:
+      name: mastodon-db
+      property: password
+  - key: DB_PORT
+    fromDatabase:
+      name: mastodon-db
+      property: port
+- type: worker
+  name: mastodon-sidekiq
+  env: docker
+  plan: starter
+  dockerCommand: ./sidekiq-start.sh
+  envVars:
+  - fromGroup: mastodon-env
+  - key: WEB_HOST
+    fromService:
+      type: web
+      name: mastodon-web
+      property: host
+  - key: SMTP_SERVER
+    sync: false
+  - key: SMTP_PORT
+    value: 587
+  - key: SMTP_LOGIN
+    sync: false
+  - key: SMTP_PASSWORD
+    sync: false
+  - key: SMTP_FROM_ADDRESS
+    sync: false
+  - key: REDIS_HOST
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: host
+  - key: REDIS_PORT
+    fromService:
+      type: redis
+      name: mastodon-redis
+      property: port
+  - key: DB_HOST
+    fromDatabase:
+      name: mastodon-db
+      property: host
+  - key: DB_USER
+    fromDatabase:
+      name: mastodon-db
+      property: user
+  - key: DB_NAME
+    fromDatabase:
+      name: mastodon-db
+      property: database
+  - key: DB_PASS
+    fromDatabase:
+      name: mastodon-db
+      property: password
+  - key: DB_PORT
+    fromDatabase:
+      name: mastodon-db
+      property: port
+- type: redis
+  name: mastodon-redis
+  ipAllowList: []
+  plan: starter
+databases:
+- name: mastodon-db
+  databaseName: private
+  ipAllowList: []
+envVarGroups:
+- name: mastodon-env
+  envVars:
+  - key: SECRET_KEY_BASE
+    generateValue: true
+  - key: OTP_SECRET
+    generateValue: true
+  - key: MY_LOCAL_DOMAIN
+    value: "" # update to your domain, or keep it empty
